@@ -1,13 +1,32 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Hello World!</title>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta 
+    http-equiv="Content-Security-Policy" 
+    content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self';">
+  <title>Note Importer</title>
+  <link rel="stylesheet" href="src/index.css">
+</head>
+<body>
+  <h1>Import Options</h1>
+  <hr>
 
-  </head>
-  <body>
-    <h1>💖 Hello World!</h1>
-    <p>Welcome to your Electron application.</p>
-    <script type="module" src="/src/renderer.js"></script>
-  </body>
+  <div class="import-settings">
+    <label for="accountSelect">Select Account:</label>
+    <select id="accountSelect"></select>
+    
+    <label for="folderInput">Folder Name:</label>
+    <input type="text" id="folderInput" placeholder="Notes">
+  </div>
+
+  <div class="file-grid">
+    <button class="file-option" data-type="markdown">Markdown</button>
+    <button class="file-option" data-type="html">HTML</button>
+    <button class="file-option" data-type="text">Text</button>
+    <!-- Additional buttons can be added here for Logseq, Obsidian, Notion, etc. -->
+  </div>
+
+  <script src="src/renderer.js"></script>
+</body>
 </html>
