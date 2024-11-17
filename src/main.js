@@ -1,16 +1,11 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const { execFile } = require("child_process");
 const path = require("node:path");
+const JSZip = require("jszip");
 const showdown = require("showdown");
 
 const converter = new showdown.Converter();
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// if (require('electron-squirrel-startup')) {
-//   app.quit();
-// }
-
-// Function to run AppleScript
 function runAppleScript(script) {
   return new Promise((resolve, reject) => {
     execFile("osascript", ["-e", script], (error, stdout, stderr) => {
@@ -26,16 +21,70 @@ function runAppleScript(script) {
 function sanitizeHTML(text) {
   if (!text) return "";
   return text
-    .replace(/\\/g, "\\\\") // Escape backslashes
-    .replace(/"/g, '\\"') // Escape double quotes
-    .replace(/\n/g, "\\n"); // Escape newlines
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n");
 }
+
+async function processFileContent(content, filename, title, account, folder) {
+  const format = filename.split(".").pop().toLowerCase();
+  let parsedContent = "";
+
+  if (format === "md") {
+    parsedContent = converter.makeHtml(content);
+  } else if (format === "html") {
+    parsedContent = content;
+  } else if (format === "txt") {
+    parsedContent = `<pre>${sanitizeHTML(content)}</pre>`;
+  } else {
+    console.warn("Unsupported file format for " + filename);
+    return;
+  }
+
+  const script = `
+    tell application "Notes"
+      set theAccount to account "${account}"
+      set theFolder to folder "${folder}" of theAccount
+      make new note at theFolder with properties {name: "${title}", body: "${sanitizeHTML(parsedContent)}"}
+    end tell
+  `;
+  return await runAppleScript(script);
+}
+
+ipcMain.handle("process-files", async (_, { files, title, account, folder }) => {
+  const textDecoder = new TextDecoder("utf-8");
+  const results = [];
+
+  for (const file of files) {
+    const { name, data, isZip } = file;
+
+    if (isZip) {
+      const zip = await JSZip.loadAsync(data);
+      for (const [filename, zipEntry] of Object.entries(zip.files)) {
+        if (!zipEntry.dir) {
+          const content = await zipEntry.async("text");
+          const result = await processFileContent(content, filename, title, account, folder);
+          results.push(result);
+        }
+      }
+    } else {
+      const content = textDecoder.decode(data); // Convert ArrayBuffer to string
+      const result = await processFileContent(content, name, title, account, folder);
+      results.push(result);
+    }
+  }
+
+  return results.every(result => result !== undefined);
+});
+
 
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 800,
+    minWidth: 1000,
+    minHeight: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -52,6 +101,12 @@ const createWindow = () => {
     );
   }
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Only that start with https://*.readwise.io will be allowed
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
@@ -59,18 +114,30 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+
+let tray
+
 app.whenReady().then(() => {
-  ipcMain.handle('import-note', async (_, { content, title, account, folder }) => {
-    const sanitizedContent = sanitizeHTML(content);
-    const script = `
-      tell application "Notes"
-        set theAccount to account "${account}"
-        set theFolder to folder "${folder}" of theAccount
-        make new note at theFolder with properties {name: "${title}", body: "${sanitizedContent}"}
-      end tell
-    `;
-    return await runAppleScript(script);
-  });
+  // const icon = nativeImage.createFromPath("icon.png").resize({
+  //   width: 16,
+  //   height: 16,
+  // });
+  // if (icon.isEmpty()) {
+  //   console.error("Failed to load icon");
+  // } else {
+  //   console.log("Icon loaded successfully");
+  //   tray = new Tray(icon);
+  // }
+
+  // const contextMenu = Menu.buildFromTemplate([
+  //   { label: "Item1", type: "radio" },
+  //   { label: "Item2", type: "radio" },
+  //   { label: "Item3", type: "radio", checked: true },
+  //   { label: "Item4", type: "radio" },
+  // ]);
+
+  // tray.setToolTip("This is my application.");
+  // tray.setContextMenu(contextMenu);
 
   ipcMain.handle('get-accounts', async () => {
     const script = `
@@ -102,10 +169,7 @@ app.whenReady().then(() => {
     return await runAppleScript(script) === 'true';
   });
 
-  ipcMain.handle("convert-markdown", (_, markdownContent) => {
-    return converter.makeHtml(markdownContent);
-  });
-
+  // Create a new window
   createWindow();
 
   // On OS X it's common to re-create a window in the app when the

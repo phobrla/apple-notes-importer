@@ -5,14 +5,16 @@
   <meta 
     http-equiv="Content-Security-Policy" 
     content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self';">
-  <title>Note Importer</title>
+  <title>Apple Notes Import</title>
   <link rel="stylesheet" href="src/index.css">
 </head>
 <body>
-  <h1>Import Options</h1>
+  <h1>Import data</h1>
   <hr>
 
   <div class="import-settings">
+    <span>Import data from other apps and files into Apple Notes. If your data is located somewhere we don't support yet, you can try importing it via CSV file.</span>
+
     <label for="accountSelect">Select Account:</label>
     <select id="accountSelect"></select>
     
@@ -21,10 +23,43 @@
   </div>
 
   <div class="file-grid">
-    <button class="file-option" data-type="markdown">Markdown</button>
-    <button class="file-option" data-type="html">HTML</button>
-    <button class="file-option" data-type="text">Text</button>
+    <button class="file-option" data-type="markdown">
+      <img src="src/assets/markdown-brands-solid.svg" alt="Markdown icon" class="file-icon">
+      Markdown
+    </button>
+    <button class="file-option" data-type="html">
+      <img src="src/assets/code-solid.svg" alt="HTML icon" class="file-icon">
+      HTML
+    </button>
+    <button class="file-option" data-type="text">
+      <img src="src/assets/file-lines-regular.svg" alt="Text icon" class="file-icon">
+      Text
+    </button>
+    <button class="file-option" data-type="text" disabled="true">
+      Notion (Coming Soon)
+    </button>
+    <button class="file-option" data-type="text" disabled="true">
+      Evernote (Coming Soon)
+    </button>
+    <button class="file-option" data-type="text" disabled="true">
+      Word (Coming Soon)
+    </button>
+    <button class="file-option" data-type="text" disabled="true">
+      PDF (Coming Soon)
+    </button>
+    <button class="file-option" data-type="text" disabled="true">
+      Google Docs (Coming Soon)
+    </button>
     <!-- Additional buttons can be added here for Logseq, Obsidian, Notion, etc. -->
+  </div>
+
+  <div class="zip-file-upload">
+    <span>Alternatively, you can upload a ZIP file containing your notes.</span>
+    <div class="drop-area" id="dropArea">
+      <p>Drag and drop files here to import them</p>
+      <button id="selectFileButton">Or click to select a file</button>
+      <input type="file" id="fileInput" accept=".zip" style="display: none" />
+    </div>
   </div>
 
   <script src="src/renderer.js"></script>

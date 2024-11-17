@@ -3,9 +3,8 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('api', {
-    importNote: (content, title, account, folder) => ipcRenderer.invoke('import-note', { content, title, account, folder }),
-    convertMarkdown: (markdownContent) => ipcRenderer.invoke('convert-markdown', markdownContent),
-    getAccounts: () => ipcRenderer.invoke('get-accounts'),
-    createOrCheckFolder: (account, folder) => ipcRenderer.invoke('create-or-check-folder', account, folder)
-  });
+contextBridge.exposeInMainWorld("api", {
+  getAccounts: () => ipcRenderer.invoke("get-accounts"),
+  createOrCheckFolder: (account, folder) => ipcRenderer.invoke("create-or-check-folder", account, folder),
+  processFiles: (files, title, account, folder) => ipcRenderer.invoke("process-files", { files, title, account, folder })
+});
