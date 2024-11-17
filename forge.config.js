@@ -4,6 +4,13 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: 'resources/icon',
+    osxSign: {},
+    osxNotarize: {
+      appleId: process.env.APPLE_ID || '',
+      appleIdPassword: process.env.APPLE_ID_PASSWORD || '',
+      teamId: process.env.APPLE_TEAM_ID || '',
+    },
   },
   rebuildConfig: {},
   makers: [
@@ -22,6 +29,21 @@ module.exports = {
     {
       name: '@electron-forge/maker-rpm',
       config: {},
+    },
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: process.env.GITHUB_OWNER || '',
+          name: process.env.GITHUB_REPO || '',
+        },
+        draft: true,
+        prerelease: true,
+        generateReleaseNotes: true,
+        authToken: process.env.GITHUB_TOKEN || '',
+      },
     },
   ],
   plugins: [
